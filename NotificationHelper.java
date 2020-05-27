@@ -1,9 +1,13 @@
+
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
@@ -14,14 +18,14 @@ import java.net.URL;
 import java.util.Map;
 import java.util.Random;
 
-import sam.myanycar.samsungFire.Loading;
-import sam.myanycar.samsungFire.NotificationDeleteBroadcastReceiver;
-import sam.myanycar.samsungFire.R;
-
 import static android.support.v4.app.NotificationCompat.PRIORITY_DEFAULT;
-import static sam.myanycar.samsungFire.provide.Uinfo.NOTIFICATION_CHANNEL;
 
 public class NotificationHelper {
+
+    // 알림 채널
+    public static final String NOTIFICATION_CHANNEL_ID_1 = "NOTIFICATION_CHANNEL";
+    public static final String NOTIFICATION_CHANNEL_NAME_1 = "알림";
+    public static final String NOTIFICATION_CHANNEL_EXPLAIN_1 = "알림 설명하는곳";
 
     private static final int NOTIFICATION_ID = 777;
 
@@ -30,8 +34,8 @@ public class NotificationHelper {
      * @param context context
      * @param title 타이틀
      * @param message 메시지
-     * @param bicTitle
-     * @param bicMessage
+     * @param bicTitle 사진형 타이틀
+     * @param bicMessage 사진형 메시지
      * @param bitmap 사진
      * @param map 각종 이벤트 및 링크관련
      */
@@ -79,7 +83,7 @@ public class NotificationHelper {
         //////////////////////////////
 
         NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
+                new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID_1)
                     .setSmallIcon(_getNotificationSmallIcon())  // 아이콘
                     .setContentTitle(title)         // 타이틀
                     .setContentText(message)
@@ -88,15 +92,15 @@ public class NotificationHelper {
                     .setContentIntent(getPendingIntent(context, _contentID, _url))
                     .setContentIntent(notifyPendingIntent);
 
-        Notification notification = mBuilder.build();
-
         //////////////////////////////
         // 스타일 변경
         //////////////////////////////
 
-        NotificationCompat.BigTextStyle bigTextStyle = new NotificationCompat.BigTextStyle(mBuilder);
-        bigTextStyle.bigText(message);
-        bigTextStyle.setBigContentTitle(title);
+        NotificationCompat.BigTextStyle bigTextStyle = new NotificationCompat.BigTextStyle()
+                .bigText(message)
+                .setBigContentTitle(title);
+
+        mBuilder.setStyle(bigTextStyle);
 
 
         // 사진
@@ -122,6 +126,10 @@ public class NotificationHelper {
         //////////////////////////////
         // 알림 트리거
         //////////////////////////////
+
+        // 스타일 까지 적용된 notification
+        Notification notification = mBuilder.build();
+
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
         notificationManager.notify(randomNumber(), notification);
 
@@ -130,14 +138,13 @@ public class NotificationHelper {
     private static int randomNumber() {
         // 공통진행
         Random random = new Random();
-        int randomID = random.nextInt(1000000);
-        return randomID;
+        return random.nextInt(1000000);
     }
 
     /**
      * 패딩인텐트 만들기
      *
-     * @param context
+     * @param context context
      * @param contentID // 파이어배에스 데이터에서 받은 알림 고유 ID
      * @return PendingIntent
      */
@@ -155,7 +162,7 @@ public class NotificationHelper {
     /**
      * 패딩인텐트 만들기 - 알림 지우기전용(브로드케스트)
      *
-     * @param context
+     * @param context context
      * @param contentID // 파이어베이스 데이터에서 받은 알림 고유 ID
      * @return PendingIntent
      */
@@ -246,5 +253,66 @@ public class NotificationHelper {
         }
     }
 
+    public static void createNotificationChannels(Context context) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            // 첫번째 채널 등록 - 현재는 한개밖에없다
+            NotificationChannel channel1 = new NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID_1,
+                    NOTIFICATION_CHANNEL_NAME_1,
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel1.setDescription(NOTIFICATION_CHANNEL_EXPLAIN_1);
+            channel1.setLightColor(Color.BLUE);
+            channel1.enableVibration(true);
+            channel1.setVibrationPattern(new long[]{100, 200, 100, 200});
+            channel1.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+
+            // 매니저에 등록
+            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel1);
+        }
+
+    }
+
+    public static void createNotificationChannelsTest(Context context) {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String CHANNEL_ID_1 = "CHANNEL_ID_1";
+            String CHANNEL_NAME_1 = "CHANNEL_ID_1 NAME";
+
+            NotificationChannel channel1 = new NotificationChannel(
+                    CHANNEL_ID_1,
+                    CHANNEL_NAME_1,
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel1.setDescription("첫번째 체널");
+
+            String CHANNEL_ID_2 = "CHANNEL_ID_2";
+            String CHANNEL_NAME_2 = "CHANNEL_ID_2 NAME";
+
+            NotificationChannel channel2 = new NotificationChannel(
+                    CHANNEL_ID_2,
+                    CHANNEL_NAME_2,
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel2.setDescription("두번째 채널");
+
+            NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel1);
+            notificationManager.createNotificationChannel(channel2);
+        }
+
+    }
+
+    /**
+     * 알림 모두 제거
+     * @param context context
+     */
+    public static void clearNotification(Context context) {
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancelAll();
+    }
 
 }
