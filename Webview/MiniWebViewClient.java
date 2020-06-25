@@ -1,4 +1,4 @@
-package com.example.forkimjs;
+package com.example.anminamwebview;
 
 import android.content.Context;
 import android.webkit.WebView;
